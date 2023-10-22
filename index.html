@@ -2,70 +2,8 @@
 <html>
 <head>
     <title>Data Visualization Dashboard</title>
-    <style>
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            font-size: 24px;
-            margin: 20px 0;
-        }
-        .action-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .action-label {
-            font-size: 18px;
-            margin-right: 10px;
-        }
-        .upload-container {
-            width: 50%;
-            height: 60px;
-            line-height: 60px;
-            border: 1px dashed #000;
-            border-radius: 5px;
-            text-align: center;
-            margin: 10px auto;
-        }
-        .dataframe-output {
-            margin-top: 10px;
-            font-size: 16px;
-            white-space: pre-line;
-        }
-        .dropdowns {
-            display: none;
-        }
-        .print-button {
-            display: none;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Data Visualization Dashboard</h1>
-        <div class="action-container">
-            <label class="action-label">Select Action:</label>
-            <input type="radio" id="visualize" name="action" value="visualize">
-            <label for="visualize">Visualize Selected Columns</label>
-            <input type="radio" id="print" name="action" value="print">
-            <label for="print">Print DataFrame</label>
-        </div>
-        <div class="upload-container" id="upload-data">
-            <div>Drag and Drop or <a>Select a File</a></div>
-        </div>
-        <div class="dataframe-output" id="dataframe-output"></div>
-        <select id="column-selector-x" class="dropdowns"></select>
-        <select id="column-selector-y" class="dropdowns"></select>
-        <div class="graph-container" id="visualization-output"></div>
-        <button id="print-button" class="print-button">Print DataFrame</button>
-    </div>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script>
-        // JavaScript logic for your Dash app can be added here.
-        // You can link to a separate JS file if needed.
-    </script>
+    <iframe src="http://127.0.0.1:8050/" width="100%" height="800px"></iframe>
 </body>
 </html>
