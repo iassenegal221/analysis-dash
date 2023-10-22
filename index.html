@@ -2,8 +2,140 @@
 <html>
 <head>
     <title>Data Visualization Dashboard</title>
+    <link rel="stylesheet" href="https://codepen.io/chriddyp/pen/bWLwgP.css">
 </head>
 <body>
-    <iframe src="http://127.0.0.1:8050/" width="100%" height="800px"></iframe>
+    <div class="container">
+        <h1>Data Visualization Dashboard</h1>
+        <div class="row" style="margin-bottom: 20px;">
+            <label for="action-selector" style="font-size: 18px; margin-right: 10px;">Select Action:</label>
+            <select id="action-selector">
+                <option value="visualize">Visualize Selected Columns</option>
+                <option value="print">Print DataFrame</option>
+            </select>
+        </div>
+        <div class="row" style="margin: 10px auto; text-align: center;">
+            <label for="upload-data" style="display: block; font-size: 18px;">Drag and Drop or <a>Select a File</a></label>
+            <input type="file" id="upload-data" style="width: 50%; height: 60px; display: none;">
+        </div>
+        <pre id="dataframe-output" style="margin-top: 10px; font-size: 16px; white-space: pre-line;"></pre>
+        <select id="column-selector-x" style="width: 50%; display: none;"></select>
+        <select id="column-selector-y" style="width: 50%; display: none;"></select>
+        <div id="visualization-output" style="margin: 10px auto;"></div>
+        <button id="print-button" style="display: none;">Print DataFrame</button>
+    </div>
+    <script src="https://codepen.io/chriddyp/pen/bWLwgP.js"></script>
+    <script>
+        document.querySelector('#action-selector').addEventListener('change', function() {
+            var visualizeSelectedColumns = document.querySelector('#action-selector').value === 'visualize';
+            var columnSelectors = [document.querySelector('#column-selector-x'), document.querySelector('#column-selector-y')];
+            columnSelectors.forEach(function(selector) {
+                selector.style.display = visualizeSelectedColumns ? 'block' : 'none';
+            });
+        });
+        
+        document.querySelector('a').addEventListener('click', function() {
+            document.querySelector('#upload-data').click();
+        });
+
+        document.querySelector('#upload-data').addEventListener('change', function() {
+            var fileInput = document.querySelector('#upload-data');
+            var file = fileInput.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var contents = e.target.result;
+                    // Simulate the Dash callback to update the column selectors
+                    updateColumnSelectors(contents);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function updateColumnSelectors(contents) {
+            if (!contents) return;
+            var df = readData(contents);
+            var columnSelectors = [document.querySelector('#column-selector-x'), document.querySelector('#column-selector-y')];
+            var columns = Array.from(df.columns);
+            columns.unshift('');
+            columnSelectors.forEach(function(selector) {
+                selector.innerHTML = '';
+                columns.forEach(function(col) {
+                    var option = document.createElement('option');
+                    option.text = col;
+                    option.value = col;
+                    selector.add(option);
+                });
+            });
+        }
+
+        function readData(contents) {
+            var contentString = contents.split(',')[1];
+            var decoded = atob(contentString);
+            var bytes = new Uint8Array(decoded.length);
+            for (var i = 0; i < decoded.length; i++) {
+                bytes[i] = decoded.charCodeAt(i);
+            }
+            var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = URL.createObjectURL(blob);
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, false);
+            xhr.send();
+            var data = new Uint8Array(xhr.response);
+            var dataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + btoa(String.fromCharCode.apply(null, data));
+            return dataUrl;
+        }
+
+        function updateVisualization(contents, selectedColumnX, selectedColumnY, action) {
+            var visualizationOutput = document.querySelector('#visualization-output');
+            var dataframeOutput = document.querySelector('#dataframe-output');
+            var printButton = document.querySelector('#print-button');
+            if (!contents || (action === 'visualize' && (!selectedColumnX || !selectedColumnY))) {
+                visualizationOutput.innerHTML = '';
+                dataframeOutput.innerHTML = '';
+                printButton.style.display = 'none';
+                return;
+            }
+            var df = readData(contents);
+            if (action === 'visualize' && df.indexOf(selectedColumnX) !== -1 && df.indexOf(selectedColumnY) !== -1) {
+                var grouped = df.groupby([selectedColumnX, selectedColumnY]).size().unstack(fill_value=0);
+                grouped.plot(kind='bar', stacked=false);
+                plt.xlabel(selectedColumnX);
+                plt.ylabel('Count');
+                plt.title(selectedColumnY + ' by ' + selectedColumnX);
+                plt.xticks(rotation=45);
+                plt.legend(title=selectedColumnY);
+                var fig = plt.gcf();
+                fig.set_size_inches(12, 6);
+                var buf = BytesIO();
+                fig.savefig(buf, format="png");
+                buf.seek(0);
+                plt.close(fig);
+                visualizationOutput.innerHTML = '';
+                var chart = document.createElement('img');
+                chart.src = 'data:image/png;base64,' + btoa(buf.read());
+                visualizationOutput.appendChild(chart);
+                dataframeOutput.innerHTML = '';
+                printButton.style.display = 'none';
+            } else if (action === 'print') {
+                visualizationOutput.innerHTML = '';
+                dataframeOutput.innerHTML = '```\n' + df.to_markdown() + '\n```';
+                printButton.style.display = 'inline';
+            }
+        }
+
+        printButton.addEventListener('click', function() {
+            printDataframe();
+        });
+
+        function printDataframe() {
+            var printWindow = window.open('', '', 'width=600,height=600');
+            printWindow.document.open();
+            printWindow.document.write('<pre>' + document.querySelector('#dataframe-output').innerHTML + '</pre>');
+            printWindow.document.close();
+            printWindow.print();
+            printWindow.close();
+        }
+    </script>
 </body>
 </html>
